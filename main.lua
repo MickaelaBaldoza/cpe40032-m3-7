@@ -1,16 +1,19 @@
 --[[
-     CMPE40032
-    Arkanoid Remake
+    GD50
+    Breakout Remake
+
+    Author: Colton Ogden
+    cogden@cs50.harvard.edu
 
     Originally developed by Atari in 1976. An effective evolution of
-    Pong, Arkanoid ditched the two-player mechanic in favor of a single-
+    Pong, Breakout ditched the two-player mechanic in favor of a single-
     player game where the player, still controlling a paddle, was tasked
     with eliminating a screen full of differently placed bricks of varying
     values by deflecting a ball back at them.
 
     This version is built to more closely resemble the NES than
     the original Pong machines or the Atari 2600 in terms of
-    resolution, though in widescreen (16:9) so it looks nicer on
+    resolution, though in widescreen (16:9) so it looks nicer on 
     modern systems.
 
     Credit for graphics (amazing work!):
@@ -37,21 +40,21 @@ function love.load()
     math.randomseed(os.time())
 
     -- set the application title bar
-    love.window.setTitle('Arkanoid')
+    love.window.setTitle('Paranoid')
 
     -- initialize our nice-looking retro text fonts
     gFonts = {
         ['small'] = love.graphics.newFont('fonts/font.ttf', 8),
         ['medium'] = love.graphics.newFont('fonts/font.ttf', 16),
-        ['large'] = love.graphics.newFont('fonts/font.ttf', 32)
+        ['large'] = love.graphics.newFont('fonts/font.ttf', 32),
+        ['title'] = love.graphics.newFont('fonts/font.ttf', 60)
     }
     love.graphics.setFont(gFonts['small'])
 
     -- load up the graphics we'll be using throughout our states
     gTextures = {
-        ['background1'] = love.graphics.newImage('graphics/background1.jpeg'),
-        ['background2'] = love.graphics.newImage('graphics/background2.jpeg'),
-        ['main'] = love.graphics.newImage('graphics/Arkanoid.png'),
+        ['background'] = love.graphics.newImage('graphics/background.png'),
+        ['main'] = love.graphics.newImage('graphics/arkanoid.png'),
         ['arrows'] = love.graphics.newImage('graphics/arrows.png'),
         ['hearts'] = love.graphics.newImage('graphics/hearts.png'),
         ['particle'] = love.graphics.newImage('graphics/particle.png')
@@ -64,10 +67,11 @@ function love.load()
         ['paddles'] = GenerateQuadsPaddles(gTextures['main']),
         ['balls'] = GenerateQuadsBalls(gTextures['main']),
         ['bricks'] = GenerateQuadsBricks(gTextures['main']),
-        ['powerups'] = GenerateQuadsBricks(gTextures['main']),
-        ['hearts'] = GenerateQuads(gTextures['hearts'], 10, 9)
+        ['hearts'] = GenerateQuads(gTextures['hearts'], 10, 9),
+        ['powerups'] = GenerateQuadsPowerups(gTextures['main']),
+        ['lockedBrick'] = GenerateQuadsLockedBrick(gTextures['main'])
     }
-
+    
     -- initialize our virtual resolution, which will be rendered within our
     -- actual window no matter its dimensions
     push:setupScreen(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT, {
@@ -191,42 +195,42 @@ function love.draw()
 
     -- background should be drawn regardless of state, scaled to fit our
     -- virtual resolution
-    local backgroundWidth2 = gTextures['background2']:getWidth()
-    local backgroundHeight2 = gTextures['background2']:getHeight()
+    local backgroundWidth = gTextures['background']:getWidth()
+    local backgroundHeight = gTextures['background']:getHeight()
 
-    love.graphics.draw(gTextures['background2'],
+    love.graphics.draw(gTextures['background'], 
         -- draw at coordinates 0, 0
-        0, 0,
+        0, 0, 
         -- no rotation
         0,
         -- scale factors on X and Y axis so it fills the screen
-        VIRTUAL_WIDTH / (backgroundWidth2 - 1), VIRTUAL_HEIGHT / (backgroundHeight2 - 1))
-
+        VIRTUAL_WIDTH / (backgroundWidth - 1), VIRTUAL_HEIGHT / (backgroundHeight - 1))
+    
     -- use the state machine to defer rendering to the current state we're in
     gStateMachine:render()
-
+    
     -- display FPS for debugging; simply comment out to remove
     displayFPS()
-
+    
     push:apply('end')
 end
 
 --[[
     Loads high scores from a .lst file, saved in LÖVE2D's default save directory in a subfolder
-    called 'Arkanoid'.
+    called 'breakout'.
 ]]
 function loadHighScores()
-    love.filesystem.setIdentity('Arkanoid')
+    love.filesystem.setIdentity('paranoid')
 
     -- if the file doesn't exist, initialize it with some default scores
-    if not love.filesystem.exists('Arkanoid.lst') then
+    if not love.filesystem.exists('paranoid.lst') then
         local scores = ''
         for i = 10, 1, -1 do
             scores = scores .. 'CTO\n'
             scores = scores .. tostring(i * 1000) .. '\n'
         end
 
-        love.filesystem.write('Arkanoid.lst', scores)
+        love.filesystem.write('paranoid.lst', scores)
     end
 
     -- flag for whether we're reading a name or not
@@ -246,7 +250,7 @@ function loadHighScores()
     end
 
     -- iterate over each line in the file, filling in names and scores
-    for line in love.filesystem.lines('Arkanoid.lst') do
+    for line in love.filesystem.lines('paranoid.lst') do
         if name then
             scores[counter].name = string.sub(line, 1, 3)
         else
@@ -268,7 +272,7 @@ end
 function renderHealth(health)
     -- start of our health rendering
     local healthX = VIRTUAL_WIDTH - 100
-
+    
     -- render health left
     for i = 1, health do
         love.graphics.draw(gTextures['hearts'], gFrames['hearts'][1], healthX, 4)
@@ -288,7 +292,7 @@ end
 function displayFPS()
     -- simple FPS display across all states
     love.graphics.setFont(gFonts['small'])
-    love.graphics.setColor(0, 255, 0, 255)
+    love.graphics.setColor(0, 255, 0, 0)
     love.graphics.print('FPS: ' .. tostring(love.timer.getFPS()), 5, 5)
 end
 
@@ -296,13 +300,12 @@ end
     Simply renders the player's score at the top right, with left-side padding
     for the score number.
 ]]
-function renderScore(score)
+function renderScore(score,recover)
     love.graphics.setFont(gFonts['small'])
     love.graphics.print('Score:', VIRTUAL_WIDTH - 60, 5)
+    love.graphics.setColor(250,250,10)
     love.graphics.printf(tostring(score), VIRTUAL_WIDTH - 50, 5, 40, 'right')
-end
+    love.graphics.setColor(255,255,255)
+    
 
-function renderKeyPowerUp()
-    local powerX=VIRTUAL_WIDTH - 120
-    love.graphics.draw(gTextures['main'],gFrames['powerups'][10], powerX, 2)
 end

@@ -1,8 +1,11 @@
 --[[
-     CMPE40032
-    Arkanoid Remake
+    GD50
+    Breakout Remake
 
     -- Paddle Class --
+
+    Author: Colton Ogden
+    cogden@cs50.harvard.edu
 
     Represents a paddle that can move left and right. Used in the main
     program to deflect the ball toward the bricks; if the ball passes
@@ -16,8 +19,6 @@ Paddle = Class{}
     Our Paddle will initialize at the same spot every time, in the middle
     of the world horizontally, toward the bottom.
 ]]
-
-
 function Paddle:init(skin)
     -- x is placed in the middle
     self.x = VIRTUAL_WIDTH / 2 - 32
@@ -55,17 +56,18 @@ function Paddle:update(dt)
     -- current calculated Y position when pressing up so that we don't
     -- go into the negatives; the movement calculation is simply our
     -- previously-defined paddle speed scaled by dt
-    if self.dx < 0 then
-        self.x = math.max(0, self.x + self.dx * dt)
+    if self.dx < 15 then
+        self.x = math.max(15, self.x + self.dx * dt)
     -- similar to before, this time we use math.min to ensure we don't
     -- go any farther than the bottom of the screen minus the paddle's
     -- height (or else it will go partially below, since position is
     -- based on its top left corner)
     else
-        self.x = math.min(VIRTUAL_WIDTH - self.width, self.x + self.dx * dt)
+        self.x = math.min(VIRTUAL_WIDTH - 15 -self.width, self.x + self.dx * dt)
     end
 
 
+    --dimensions per size of paddle
     if self.size== 1 then
         self.width= 32
     end
@@ -78,16 +80,31 @@ function Paddle:update(dt)
         self.width=128
     end
 
-
-  
 end
-
 
 --[[
     Render the paddle by drawing the main texture, passing in the quad
     that corresponds to the proper skin and size.
 ]]
 function Paddle:render()
-    love.graphics.draw(gTextures['main'], gFrames['paddles'][self.size + 4 * (self.skin - 1)],
+    -- frame used to draw the paddle
+    paddleFrame = gFrames['paddles'][self.size + 4 * (self.skin - 1)]
+
+    love.graphics.draw(gTextures['main'], paddleFrame,
         self.x, self.y)
 end
+
+--[[function Paddle:grow()
+    if self.size < 4 then
+        self.size = self.size + 1
+        self.width = 32*self.size
+    end
+end
+
+function Paddle:shrink()
+    if self.size > 1 then
+        self.size = self.size - 1
+        self.width = 32*self.size
+    end
+end
+]]

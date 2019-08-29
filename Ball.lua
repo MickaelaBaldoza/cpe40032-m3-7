@@ -1,8 +1,11 @@
 --[[
-     CMPE40032
-    Arkanoid Remake
+    GD50
+    Breakout Remake
 
     -- Ball Class --
+
+    Author: Colton Ogden
+    cogden@cs50.harvard.edu
 
     Represents a ball which will bounce back and forth between the sides
     of the world space, the player's paddle, and the bricks laid out above
@@ -42,7 +45,7 @@ function Ball:collides(target)
     -- edge of the other
     if self.y > target.y + target.height or target.y > self.y + self.height then
         return false
-    end
+    end 
 
     -- if the above aren't true, they're overlapping
     return true
@@ -63,20 +66,20 @@ function Ball:update(dt)
     self.y = self.y + self.dy * dt
 
     -- allow ball to bounce off walls
-    if self.x <= 0 then
-        self.x = 0
+    if self.x <= 15 then
+        self.x = 15
         self.dx = -self.dx
         gSounds['wall-hit']:play()
     end
 
-    if self.x >= VIRTUAL_WIDTH - 8 then
-        self.x = VIRTUAL_WIDTH - 8
+    if self.x >= VIRTUAL_WIDTH - 23 then
+        self.x = VIRTUAL_WIDTH - 23
         self.dx = -self.dx
         gSounds['wall-hit']:play()
     end
 
-    if self.y <= 0 then
-        self.y = 0
+    if self.y <= 15 then
+        self.y = 15
         self.dy = -self.dy
         gSounds['wall-hit']:play()
     end
